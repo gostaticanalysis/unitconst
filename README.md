@@ -10,7 +10,7 @@ time.Sleep(duration)
 ```
 
 ```sh
-$ go vet -vettool=`which duration` -unitconst.type="time.Duration" main.go
+$ go vet -vettool=`which unitconst` -unitconst.type="time.Duration" main.go
 ./main.go:6:13: must not use a untyped constant without a unit
 ```
 
