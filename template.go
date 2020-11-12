@@ -7,7 +7,7 @@ import (
 
 type tmplData struct {
 	Exprs map[token.Pos]string
-	Types []*hashed
+	Types []*hashedType
 }
 
 var srcTmpl = template.Must(template.New("a.go").Parse(`package a

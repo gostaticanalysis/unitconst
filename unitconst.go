@@ -40,7 +40,7 @@ var Analyzer = &analysis.Analyzer{
 	},
 }
 
-type hashed struct {
+type hashedType struct {
 	Org   *types.Named
 	Name  string
 	Under string
@@ -49,7 +49,7 @@ type hashed struct {
 type analyzer struct {
 	pass    *analysis.Pass
 	inspect *inspector.Inspector
-	types   []*hashed
+	types   []*hashedType
 }
 
 func (a *analyzer) run(pass *analysis.Pass) (interface{}, error) {
@@ -91,7 +91,7 @@ func (a *analyzer) run(pass *analysis.Pass) (interface{}, error) {
 		}
 
 		t := info.TypeOf(ident)
-		if a.isTargetByHash(a.types, t) {
+		if a.isTarget(t) {
 			return true
 		}
 
@@ -119,11 +119,11 @@ func (a *analyzer) init(pass *analysis.Pass) error {
 	if err != nil {
 		return err
 	}
-	a.types = make([]*hashed, len(ts))
+	a.types = make([]*hashedType, len(ts))
 	hasher := typeutil.MakeHasher()
 	for i := range ts {
 		h := hasher.Hash(ts[i])
-		a.types[i] = &hashed{
+		a.types[i] = &hashedType{
 			Org:   ts[i],
 			Name:  fmt.Sprintf("t%d", h),
 			Under: analysisutil.Under(ts[i]).String(),
@@ -132,7 +132,7 @@ func (a *analyzer) init(pass *analysis.Pass) error {
 	return nil
 }
 
-func (a *analyzer) hash(t types.Type) *hashed {
+func (a *analyzer) hash(t types.Type) *hashedType {
 	for i := range a.types {
 		if types.Identical(a.types[i].Org, t) {
 			return a.types[i]
@@ -199,7 +199,7 @@ func (a *analyzer) constExprs() map[token.Pos]string {
 
 			for _, arg := range expr.Args {
 				tv := a.pass.TypesInfo.Types[arg]
-				if tv.Value != nil && a.isTarget(a.types, tv.Type) {
+				if tv.Value != nil && a.hash(tv.Type) != nil {
 					pos := arg.Pos() // pos must be got before expand
 					expandedExpr := a.expandNamedConstAll(arg)
 					exprs[pos] = exprToString(expandedExpr)
@@ -207,7 +207,7 @@ func (a *analyzer) constExprs() map[token.Pos]string {
 			}
 		default:
 			tv := a.pass.TypesInfo.Types[expr]
-			if tv.Value != nil && a.isTarget(a.types, tv.Type) {
+			if tv.Value != nil && a.hash(tv.Type) != nil {
 				expandedExpr := a.expandNamedConstAll(expr)
 				exprs[expr.Pos()] = exprToString(expandedExpr)
 			}
@@ -218,20 +218,7 @@ func (a *analyzer) constExprs() map[token.Pos]string {
 	return exprs
 }
 
-func (a *analyzer) isTarget(ts []*hashed, t types.Type) bool {
-	if t == nil {
-		return false
-	}
-
-	for i := range ts {
-		if types.Identical(t, ts[i].Org) {
-			return true
-		}
-	}
-	return false
-}
-
-func (a *analyzer) isTargetByHash(ts []*hashed, t types.Type) bool {
+func (a *analyzer) isTarget(t types.Type) bool {
 	if t == nil {
 		return false
 	}
@@ -241,8 +228,8 @@ func (a *analyzer) isTargetByHash(ts []*hashed, t types.Type) bool {
 	if len(splited) > 1 {
 		tn = splited[len(splited) - 1]
 	}
-	for i := range ts {
-		if ts[i].Name == tn {
+	for i := range a.types {
+		if a.types[i].Name == tn {
 			return true
 		}
 	}
