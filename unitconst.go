@@ -262,7 +262,7 @@ func (a *analyzer) expandNamedConstAll(expr ast.Expr) ast.Expr {
 			v := a.expandNamedConst(tv.Value)
 			switch t := obj.Type().(type) {
 			case *types.Named:
-				func := a.hash(t).expr()
+				fun := a.hash(t).expr()
 				if fun == nil {
 					return false
 				}
@@ -280,8 +280,8 @@ func (a *analyzer) expandNamedConstAll(expr ast.Expr) ast.Expr {
 			switch obj := obj.(type) {
 			case *types.Const:
 				v := a.expandNamedConst(obj.Val())
-				func := a.hash(obj.Type()).expr()
-				if func == nil {
+				fun := a.hash(obj.Type()).expr()
+				if fun == nil {
 					return false
 				}
 				cast := &ast.CallExpr{
