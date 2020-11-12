@@ -7,23 +7,13 @@ import (
 
 type tmplData struct {
 	Exprs map[token.Pos]string
-	Pkgs  []string
-	Types []string
+	Types []*hashed
 }
 
 var srcTmpl = template.Must(template.New("a.go").Parse(`package a
-import (
-{{- range .Pkgs}}
-	"{{.}}"
-{{end -}}
-)
-
-// dummy
-var (
-{{- range .Types}}
-	_ {{.}}
-{{end -}}
-)
+{{range .Types}}
+type {{.Name}} {{.Under}} // {{.Org}}
+{{end}}
 
 func f() {
 {{- range $pos, $expr := .Exprs}}
