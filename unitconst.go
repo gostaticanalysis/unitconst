@@ -208,7 +208,6 @@ func (a *analyzer) constExprs() map[token.Pos]string {
 		default:
 			tv := a.pass.TypesInfo.Types[expr]
 			if tv.Value != nil && a.isTarget(a.types, tv.Type) {
-				fmt.Println(exprToString(expr))
 				expandedExpr := a.expandNamedConstAll(expr)
 				exprs[expr.Pos()] = exprToString(expandedExpr)
 			}
@@ -356,7 +355,6 @@ func (a *analyzer) parse(fset *token.FileSet, d *tmplData) (*ast.File, error) {
 	if err := srcTmpl.Execute(&src, d); err != nil {
 		return nil, err
 	}
-	fmt.Println(&src)
 
 	f, err := parser.ParseFile(fset, "a.go", &src, 0)
 	if err != nil {
