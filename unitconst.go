@@ -46,6 +46,19 @@ type hashedType struct {
 	Under string
 }
 
+func (h *hashedType) expr() ast.Expr {
+	if h == nil {
+		return nil
+	}
+
+	expr, err := parser.ParseExpr(h.Name)
+	if err != nil {
+		return nil // ignore error
+	}
+
+	return expr
+}
+
 type analyzer struct {
 	pass    *analysis.Pass
 	inspect *inspector.Inspector
@@ -242,26 +255,24 @@ func (a *analyzer) expandNamedConstAll(expr ast.Expr) ast.Expr {
 		case *ast.Ident:
 			obj := a.pass.TypesInfo.ObjectOf(n)
 			tv := a.pass.TypesInfo.Types[n]
-			if tv.Value != nil {
-				v := a.expandNamedConst(tv.Value)
-				switch t := obj.Type().(type) {
-				case *types.Named:
-					h := a.hash(t)
-					if h == nil {
-						return false
-					}
-					fun, err := parser.ParseExpr(h.Name)
-					if err != nil {
-						return false
-					}
-					cast := &ast.CallExpr{
-						Fun:  fun,
-						Args: []ast.Expr{v},
-					}
-					c.Replace(cast)
-				default:
-					c.Replace(v)
+			if tv.Value == nil {
+				return false
+			}
+
+			v := a.expandNamedConst(tv.Value)
+			switch t := obj.Type().(type) {
+			case *types.Named:
+				func := a.hash(t).expr()
+				if fun == nil {
+					return false
 				}
+				cast := &ast.CallExpr{
+					Fun:  fun,
+					Args: []ast.Expr{v},
+				}
+				c.Replace(cast)
+			default:
+				c.Replace(v)
 			}
 			return false
 		case *ast.SelectorExpr:
@@ -269,12 +280,8 @@ func (a *analyzer) expandNamedConstAll(expr ast.Expr) ast.Expr {
 			switch obj := obj.(type) {
 			case *types.Const:
 				v := a.expandNamedConst(obj.Val())
-				h := a.hash(obj.Type())
-				if h == nil {
-					return false
-				}
-				fun, err := parser.ParseExpr(h.Name)
-				if err != nil {
+				func := a.hash(obj.Type()).expr()
+				if func == nil {
 					return false
 				}
 				cast := &ast.CallExpr{
@@ -283,16 +290,13 @@ func (a *analyzer) expandNamedConstAll(expr ast.Expr) ast.Expr {
 				}
 				c.Replace(cast)
 			case *types.TypeName:
-				h := a.hash(obj.Type())
-				if h == nil {
-					return false
-				}
-				t, err := parser.ParseExpr(h.Name)
-				if err != nil {
+				t := a.hash(obj.Type()).expr()
+				if t == nil {
 					return false
 				}
 				c.Replace(t)
 			}
+			return false
 		}
 		return true
 	}, nil).(ast.Expr)
