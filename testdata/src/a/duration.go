@@ -37,6 +37,10 @@ func f() {
 
 	const d4 = 8 * time.Second // OK
 	time.Sleep(d4)
+
+	time.Sleep(0) // OK
+	const d5 = 0
+	time.Sleep(d5) // want `must not use a untyped constant without a unit`
 }
 
 type T struct{}
