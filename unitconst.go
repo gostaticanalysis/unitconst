@@ -9,6 +9,7 @@ import (
 	"go/parser"
 	"go/token"
 	"go/types"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -202,24 +203,38 @@ func (a *analyzer) constExprs() map[token.Pos]string {
 			return true
 		}
 
+		tv := a.pass.TypesInfo.Types[expr]
+		// Skip a basic litteral which is zero value
+		// e.g. time.Sleep(0)
+		_, isLit := n.(*ast.BasicLit)
+		if isLit && tv.Value != nil && isZero(tv.Value) {
+			return false
+		}
+
 		switch expr := expr.(type) {
 		case *ast.Ident, *ast.SelectorExpr:
 			return false
 		case *ast.CallExpr:
-			if tv := a.pass.TypesInfo.Types[expr]; tv.Value != nil {
+			if tv.Value != nil {
 				return false
 			}
 
 			for _, arg := range expr.Args {
 				tv := a.pass.TypesInfo.Types[arg]
 				if tv.Value != nil && a.hash(tv.Type) != nil {
+					// Skip a basic litteral which is zero value
+					// e.g. time.Sleep(0)
+					_, isLit := arg.(*ast.BasicLit)
+					if isLit && isZero(tv.Value) {
+						continue
+					}
+
 					pos := arg.Pos() // pos must be got before expand
 					expandedExpr := a.expandNamedConstAll(arg)
 					exprs[pos] = exprToString(expandedExpr)
 				}
 			}
 		default:
-			tv := a.pass.TypesInfo.Types[expr]
 			if tv.Value != nil && a.hash(tv.Type) != nil {
 				expandedExpr := a.expandNamedConstAll(expr)
 				exprs[expr.Pos()] = exprToString(expandedExpr)
@@ -239,7 +254,7 @@ func (a *analyzer) isTarget(t types.Type) bool {
 	splited := strings.Split(t.String(), ".")
 	tn := splited[0]
 	if len(splited) > 1 {
-		tn = splited[len(splited) - 1]
+		tn = splited[len(splited)-1]
 	}
 	for i := range a.types {
 		if a.types[i].Name == tn {
@@ -372,4 +387,8 @@ func (a *analyzer) typeCheck(fset *token.FileSet, f *ast.File) (*types.Package, 
 	}
 
 	return pkg, info, nil
+}
+
+func isZero(v constant.Value) bool {
+	return reflect.ValueOf(constant.Val(v)).IsZero()
 }
