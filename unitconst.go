@@ -35,10 +35,14 @@ const doc = "unitconst finds using untyped constant as specified type"
 var Analyzer = &analysis.Analyzer{
 	Name: "unitconst",
 	Doc:  doc,
-	Run:  new(analyzer).run,
+	Run:  run,
 	Requires: []*analysis.Analyzer{
 		inspect.Analyzer,
 	},
+}
+
+func run(pass *analysis.Pass) (interface{}, error) {
+	return new(analyzer).run(pass)
 }
 
 type hashedType struct {
