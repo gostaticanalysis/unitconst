@@ -1,6 +1,6 @@
 # unitconst
 
-[![godoc.org][godoc-badge]][godoc]
+[![pkg.go.dev][gopkg-badge]][gopkg]
 
 `unitconst` finds using a untyped constant without a unit.
 
@@ -18,6 +18,5 @@ The default value of `unitconst.type` option is `time.Duration`.
 `unitconst.type` accepts comma separated value such as `time.Duration, unit.Length`.
 
 <!-- links -->
-[godoc]: https://godoc.org/github.com/gostaticanalysis/unitconst
-[godoc-badge]: https://img.shields.io/badge/godoc-reference-4F73B3.svg?style=flat-square&label=%20godoc.org
-
+[gopkg]: https://pkg.go.dev/github.com/gostaticanalysis/unitconst
+[gopkg-badge]: https://pkg.go.dev/badge/github.com/gostaticanalysis/unitconst?status.svg
