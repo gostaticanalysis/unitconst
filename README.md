@@ -5,7 +5,7 @@
 `unitconst` finds using a untyped constant without a unit.
 
 ```go
-duration := 5 // 5 * time.Second is correct
+const duration = 5 // 5 * time.Second is correct
 time.Sleep(duration)
 ```
 
